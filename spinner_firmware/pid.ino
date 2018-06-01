@@ -1,4 +1,5 @@
 #include "configuration.h"
+#include "pins.h"
 
 unsigned long last_pid_update;
 unsigned long ts;
@@ -14,7 +15,7 @@ double current_smooth_input;
 double previous_smooth_input;
 unsigned int ind_smooth;
 
-double feedforward_gain = 1.0;
+double feedforward_gain;
 
 void init_pid() {
   for (int i = 0; i < D_SMOOTHING; i++) {
@@ -33,6 +34,7 @@ void init_pid() {
   lastInput = 0;
   ITerm = 0;
   enable_feedforward = true;
+  feedforward_gain = FEEDFORWARD_GAIN;
 }
 
 double compute_pid() {

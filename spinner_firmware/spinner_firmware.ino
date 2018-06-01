@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include "configuration.h"
+#include "pins.h"
 
 Servo ESC;
 
@@ -7,18 +8,11 @@ unsigned long last_reading = 0;
 unsigned long last_esc_update = 0;
 unsigned long tacho_last_trig = 0;
 
-double rpm[RPM_SAMPLES];
-double total_rpm = 0;
-double current_rpm = 0;
 unsigned int ind = 0;
 long output_values[OUTPUT_SAMPLES];
 long total_output = 0;
 long throttle = THROTTLE_STOP;
 unsigned int ind_output = 0;
-
-int tacho_state = LOW;
-int tacho_an = 0;
-boolean tacho_triggered = false;
 
 /***PID parameters***/
 //Steady  state
@@ -38,33 +32,8 @@ unsigned long state_start_time;
 long ramp_time = 2000;
 long hold_time = 10000;
 float rpm_goal = 3000;
-/*int throttletable[NUM_THROTTLE][2] = {
-  {2368, 1080},
-  {4632, 1166},
-  {6410, 1252},
-  {7614, 1338},
-  {8515, 1424},
-  {9115, 1510},
-  {9634, 1596},
-  {10054, 1682},
-  {10446, 1768},
-  {10821, 1854}
-  };*/
 
-/*int throttletable[NUM_THROTTLE][2] = {
-  {0, 1080},
-  {1042, 1126},
-  {1596, 1172},
-  {2160, 1218},
-  {2745, 1264},
-  {3300, 1310},
-  {3937, 1356},
-  {4526, 1402},
-  {5069, 1448},
-  {5625, 1494}
-  };*/
-
-int throttletable[NUM_THROTTLE][2] = {
+int throttletable[NUM_THROTTLE][2] = { //{RPM, throttle [ms]}
   {0, 1080},
   {1295, 1104},
   {1939, 1128},
@@ -80,10 +49,6 @@ int throttletable[NUM_THROTTLE][2] = {
 
 
 void setup() {
-  for (int i = 0; i < RPM_SAMPLES; i++) {
-    rpm[i] = 0;
-  }
-
   for (int i = 0; i < OUTPUT_SAMPLES; i++) {
     output_values[i] = THROTTLE_STOP;
     total_output += THROTTLE_STOP;
@@ -97,7 +62,6 @@ void setup() {
     delay(20);
   }
 
-  int a = analogRead(0);
   //kp_r = (a / 1024.0f) * 200 * 0.001;
   if (false) {
     Serial.println("Ramp: ");
@@ -117,6 +81,7 @@ void setup() {
   }
 
   init_pid();
+  init_tacho();
   set_sample_time(1000);
   set_pid_parameters(kp_r, ki_r, kd_r);
 
@@ -135,7 +100,7 @@ void loop() {
       t += (long)(calib_step * ((THROTTLE_MAX - THROTTLE_MIN) / (NUM_THROTTLE - 1)));
       int next_step = (int)floor((millis() - state_start_time) / CALIB_TIME);
       if (next_step > calib_step) {
-        throttletable[calib_step][0] = current_rpm;
+        throttletable[calib_step][0] = get_rpm();
         throttletable[calib_step][1] = t;
         calib_step = next_step;
       }
@@ -158,7 +123,7 @@ void loop() {
     } else {
       set_setpoint(0);
     }
-    set_input((double)current_rpm);
+    set_input(get_rpm());
     int o = round(compute_pid());
     update_esc(o);
   }
@@ -172,7 +137,7 @@ void loop() {
     }
 
     double sp = rpm_goal;
-    double err = sp - current_rpm;
+    double err = sp - get_rpm();
     if (err < sp * STEADY_THRES) {
       //switch to steady state
       set_pid_parameters(kp_ss, ki_ss, kd_ss);
@@ -181,7 +146,7 @@ void loop() {
       state = 2;
     }
 
-    set_input((double)current_rpm);
+    set_input(get_rpm());
     int o = round(compute_pid());
     update_esc(o);
   } else {
@@ -204,7 +169,7 @@ void loop() {
     update_esc(throttle);*/
 
   if (millis() - last_reading > READOUT_PERIOD) {
-    Serial.print(current_rpm);
+    Serial.print(get_rpm());
     Serial.print(" ");
     Serial.print(get_setpoint());
     Serial.print(" ");
@@ -214,60 +179,6 @@ void loop() {
       Serial.print(", ");
       Serial.println(t);*/
     last_reading = millis();
-  }
-}
-
-void update_tacho() {
-  tacho_an = analogRead(TACHO_PIN);
-  if (tacho_triggered) {
-    if (tacho_an < TACHO_THRES - TACHO_HYST) {
-      if (tacho_state) {
-        tacho_state = LOW;
-        unsigned long delta = micros() - tacho_last_trig;
-        tacho_last_trig = micros();
-        double r = (30 * 1000000.0) / delta;
-        update_rpm(r);
-      }
-    } else if (tacho_an > TACHO_THRES + TACHO_HYST) {
-      if (!tacho_state) {
-        tacho_state = HIGH;
-        unsigned long delta = micros() - tacho_last_trig;
-        tacho_last_trig = micros();
-        double r = (30 * 1000000.0) / delta;
-        update_rpm(r);
-      }
-    }
-  } else {
-    if (tacho_an < TACHO_THRES - TACHO_HYST) {
-      if (tacho_state) {
-        tacho_state = LOW;
-        tacho_last_trig = micros();
-        tacho_triggered = true;
-      }
-    } else if (tacho_an > TACHO_THRES + TACHO_HYST) {
-      if (!tacho_state) {
-        tacho_state = HIGH;
-        tacho_last_trig = micros();
-        tacho_triggered = true;
-      }
-    }
-  }
-  if (micros() - tacho_last_trig > 32000) {
-    update_rpm(0);
-    tacho_last_trig = micros();
-    tacho_triggered = false;
-  }
-}
-
-void update_rpm(double r) {
-
-  total_rpm -= rpm[ind];
-  total_rpm += r;
-  current_rpm = total_rpm / RPM_SAMPLES;
-  rpm[ind] = r;
-  ind++;
-  if (ind >= RPM_SAMPLES) {
-    ind = 0;
   }
 }
 
