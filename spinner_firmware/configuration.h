@@ -16,3 +16,13 @@
 #define CALIB_TIME       10000
 #define STEADY_THRES         0.08 //8%. When the current RPM is within 8% of the setpoint, the state is switched from RAMP to  STEADY STATE
 #define FEEDFORWARD_GAIN     1.0
+
+/***PID parameters***/
+//Steady  state
+#define Kp_SS 51.27 * 0.001
+#define Ki_SS 35.89 * 0.001
+#define Kd_SS 0.0
+//Ramp
+#define Kp_RAMP 85.0 * 0.001
+#define Ki_RAMP 0.0
+#define Kd_RAMP 0.0

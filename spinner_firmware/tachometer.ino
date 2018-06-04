@@ -1,15 +1,21 @@
+#include "configuration.h"
+#include "pins.h"
+
 int tacho_state;
 int tacho_an;
 boolean tacho_triggered;
+unsigned long tacho_last_trig;
 
 double rpm[RPM_SAMPLES];
 double total_rpm;
 double current_rpm;
+unsigned int rpm_ind;
 
 void init_tacho(){
   tacho_state = LOW;
   tacho_an = 0;
   tacho_triggered = false;
+  tacho_last_trig = 0;
 
   for (int i = 0; i < RPM_SAMPLES; i++) {
     rpm[i] = 0;
@@ -17,6 +23,7 @@ void init_tacho(){
   
   total_rpm = 0;
   current_rpm = 0;
+  rpm_ind = 0;
 }
 
 void update_tacho() {
@@ -62,13 +69,13 @@ void update_tacho() {
 }
 
 void update_rpm(double r) {
-  total_rpm -= rpm[ind];
+  total_rpm -= rpm[rpm_ind];
   total_rpm += r;
   current_rpm = total_rpm / RPM_SAMPLES;
-  rpm[ind] = r;
-  ind++;
-  if (ind >= RPM_SAMPLES) {
-    ind = 0;
+  rpm[rpm_ind] = r;
+  rpm_ind++;
+  if (rpm_ind >= RPM_SAMPLES) {
+    rpm_ind = 0;
   }
 }
 

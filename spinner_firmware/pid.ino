@@ -104,7 +104,7 @@ double get_output() {
 }
 
 void set_pid_parameters(double p, double i, double d) {
-  double sample_time = ts / 1000000.0;
+  double sample_time = ts / 1000000.0; // convert from µs to s
   Kp = p;
   Ki = i * sample_time;
   Kd = d / sample_time;
@@ -158,3 +158,20 @@ double get_feedforward(double r) {
   return t;
 }
 
+void print_parameters() {
+  Serial.println("Ramp: ");
+  Serial.print("Kp: ");
+  Serial.print(Kp_RAMP, 8);
+  Serial.print(", Ki: ");
+  Serial.print(Ki_RAMP, 8);
+  Serial.print(", Kd: ");
+  Serial.println(Kd_RAMP, 8);
+  Serial.println("");
+  Serial.println("Steady state: ");
+  Serial.print("Kp: ");
+  Serial.print(Kp_SS, 8);
+  Serial.print(", Ki: ");
+  Serial.print(Ki_SS, 8);
+  Serial.print(", Kd: ");
+  Serial.println(Kd_SS, 8);
+}
