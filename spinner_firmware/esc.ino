@@ -25,12 +25,12 @@ int throttletable[NUM_THROTTLE][2] = { //{RPM, throttle [ms]}
 };
 
 void init_esc() {
+  total_output = 0;
   for (int i = 0; i < OUTPUT_SAMPLES; i++) {
     output_values[i] = THROTTLE_STOP;
     total_output += THROTTLE_STOP;
   }
   last_esc_update = 0;
-  total_output = 0;
   throttle = THROTTLE_STOP;
   ind_output = 0;
   ESC.attach(ESC_PIN);
@@ -52,12 +52,11 @@ void update_esc(int p) {
   }
 }
 
-int update_output(int new_o) {
+long update_output(long new_o) {
   total_output -= output_values[ind_output];
-  total_output += (long)new_o;
-  double d_throttle = ((double)total_output) / ((double)OUTPUT_SAMPLES);
-  thrott = (int)d_throttle;
-  output_values[ind_output] = (long)new_o;
+  total_output += new_o;
+  long thrott = (total_output) / ((double)OUTPUT_SAMPLES);
+  output_values[ind_output] = new_o;
   ind_output++;
   if (ind_output >= OUTPUT_SAMPLES) {
     ind_output = 0;
@@ -81,5 +80,9 @@ void print_calibration_table() {
 void update_lut(int ind, int rpm, int throttle) {
   throttletable[ind][0] = rpm;
   throttletable[ind][1] = throttle;
+}
+
+long get_throttle() {
+  return throttle;
 }
 
