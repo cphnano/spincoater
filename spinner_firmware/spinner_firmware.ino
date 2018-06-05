@@ -3,7 +3,7 @@
 
 unsigned long last_reading = 0;
 
-int state; //0 = idle, 1 = ramp up, 2 = hold speed, 3 = ramp down, -1 = calibration
+int state; // -1 = calibration, 0 = do nothing, 1 = ramp up, 2 = hold speed, 3 = ramp down, 4 = spin slowly (for checking alignment)
 int calib_step;
 unsigned long state_start_time;
 
@@ -14,7 +14,10 @@ float rpm_goal = 3000;
 
 long throttle;
 
+String instr;
+
 void setup() {
+  instr = "";
   Serial.begin(BAUD_RATE);
   throttle = THROTTLE_STOP;
 
@@ -27,11 +30,20 @@ void setup() {
 
   arm_esc();
   delay(1000);
-
-  set_state(1);
 }
 
 void loop() {
+  // read new commands
+  if (Serial.available() > 0) {
+    char c = Serial.read();
+    if (c == '\n') {
+      interpret_command(instr);
+      instr = "";
+    } else {
+      instr = instr + c;
+    }
+  }
+
   update_tacho();
 
   switch (state) {
@@ -47,8 +59,12 @@ void loop() {
     case 3:
       spin_ramp_down();
       break;
+    case 4:
+      throttle = THROTTLE_MIN;
+      break;
     default:
       throttle = THROTTLE_STOP;
+      break;
   }
 
   update_esc(throttle);
