@@ -61,7 +61,7 @@ void update_tacho() {
       }
     }
   }
-  if (micros() - tacho_last_trig > 32000) {
+  if (micros() - tacho_last_trig > 64000) {
     update_rpm(0);
     tacho_last_trig = micros();
     tacho_triggered = false;

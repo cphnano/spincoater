@@ -8,7 +8,7 @@ int calib_step;
 unsigned long state_start_time;
 
 // spin cycle configuration. Linear ramp from 0 to rpm_goal over ramp_time number of ms, then hold for hold_time and then linear ramp from rpm_goal to 0 over ramp_time number of ms
-long ramp_time = 2000;
+long ramp_time = 10000;
 long hold_time = 10000;
 float rpm_goal = 3000;
 
@@ -28,10 +28,7 @@ void setup() {
   arm_esc();
   delay(1000);
 
-  state_start_time = millis();
-  state = 1;
-
-  //start_calibration();
+  set_state(1);
 }
 
 void loop() {
@@ -73,28 +70,8 @@ void set_state(int new_state) {
     if (state == -1) {
       calib_step = 0;
     }
-
     state_start_time = millis();
   }
-}
-
-void spin_ramp_up() {
-  long delta = millis() - state_start_time;
-  double sp = rpm_goal;
-  if (delta < ramp_time) {
-    sp = map(delta, 0, ramp_time, 0, rpm_goal);
-  }
-
-  double err = rpm_goal - get_rpm();
-  if (err < rpm_goal * STEADY_THRES) {
-    //switch to steady state
-    set_pid_parameters(Kp_SS, Ki_SS, Kd_SS);
-    sp = rpm_goal;
-
-    set_state(2);
-  }
-
-  throttle = compute_throttle(sp);
 }
 
 void spin_steadystate() {
@@ -106,11 +83,30 @@ void spin_steadystate() {
   }
 }
 
+void spin_ramp_up() {
+  long delta = millis() - state_start_time;
+  double sp = rpm_goal;
+  if (delta < ramp_time) {
+    sp = map(delta, 0, ramp_time, 0, rpm_goal);
+  } else {
+    sp = rpm_goal;
+    set_state(2);
+  }
+
+  double err = rpm_goal - get_rpm();
+  if (err < rpm_goal * STEADY_THRES) {
+    //switch to steady state
+    set_pid_parameters(Kp_SS, Ki_SS, Kd_SS);
+  }
+
+  throttle = compute_throttle(sp);
+}
+
 void spin_ramp_down() {
   long delta = millis() - state_start_time;
   double sp = 0;
   if (delta < ramp_time) {
-    sp = map(delta, 0, hold_time, rpm_goal, 0);
+    sp = map(delta, 0, ramp_time, rpm_goal, 0);
     if (sp < 0) {
       sp = 0;
     }

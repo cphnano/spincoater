@@ -1,7 +1,7 @@
 /* CONFIGURATION */
 #define ESC_PERIOD        2000L // µs
 #define BAUD_RATE       115200
-#define RPM_SAMPLES         36 // size of the running average for RPM measurement
+#define RPM_SAMPLES         12 // size of the running average for RPM measurement
 #define TACHO_THRES        470 
 #define TACHO_HYST         150
 #define OUTPUT_SAMPLES       1 // size of the running average for the output throttle
