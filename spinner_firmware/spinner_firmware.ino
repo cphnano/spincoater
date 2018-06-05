@@ -3,7 +3,7 @@
 
 unsigned long last_reading = 0;
 
-int state; //0 = idle, 1 = ramp, 2 = spinning, 3 = calibration
+int state; //0 = idle, 1 = ramp up, 2 = hold speed, 3 = ramp down, -1 = calibration
 int calib_step;
 unsigned long state_start_time;
 
@@ -12,8 +12,11 @@ long ramp_time = 2000;
 long hold_time = 10000;
 float rpm_goal = 3000;
 
+long throttle;
+
 void setup() {
   Serial.begin(BAUD_RATE);
+  throttle = THROTTLE_STOP;
 
   init_esc();
 
@@ -35,6 +38,9 @@ void loop() {
   update_tacho();
 
   switch (state) {
+    case -1:
+      run_calibration();
+      break;
     case 1:
       spin_ramp_up();
       break;
@@ -42,11 +48,13 @@ void loop() {
       spin_steadystate();
       break;
     case 3:
-      run_calibration();
+      spin_ramp_down();
       break;
     default:
-      set_setpoint(0);
+      throttle = THROTTLE_STOP;
   }
+
+  update_esc(throttle);
 
   if (millis() - last_reading > READOUT_PERIOD) {
     Serial.print(get_rpm());
@@ -54,32 +62,20 @@ void loop() {
     Serial.print(get_setpoint());
     Serial.print(" ");
     Serial.println(get_throttle());
-    /*float t = millis()/1000.0f;
-      Serial.print(current_rpm);
-      Serial.print(", ");
-      Serial.println(t);*/
     last_reading = millis();
   }
 }
 
-void start_calibration() {
-  state = 3;
-  calib_step = 0;
-  state_start_time = millis();
-}
+void set_state(int new_state) {
+  if (state != new_state) {
+    state = new_state;
 
-void spin_steadystate() {
-  long delta = millis() - state_start_time;
-  double sp = 0;
-  if (delta < ramp_time + hold_time) {
-    sp = rpm_goal;
-  } else if (delta < ramp_time + ramp_time + hold_time) {
-    sp = map(delta - (ramp_time + hold_time), 0, ramp_time, rpm_goal, 0);
-    if (sp < 0) {
-      sp = 0;
+    if (state == -1) {
+      calib_step = 0;
     }
+
+    state_start_time = millis();
   }
-  compute_and_update(sp);
 }
 
 void spin_ramp_up() {
@@ -93,42 +89,62 @@ void spin_ramp_up() {
   if (err < rpm_goal * STEADY_THRES) {
     //switch to steady state
     set_pid_parameters(Kp_SS, Ki_SS, Kd_SS);
-    state_start_time = millis();
     sp = rpm_goal;
-    state = 2;
+
+    set_state(2);
   }
 
-  compute_and_update(sp);
+  throttle = compute_throttle(sp);
+}
+
+void spin_steadystate() {
+  long delta = millis() - state_start_time;
+  throttle = compute_throttle(rpm_goal);
+
+  if (delta > hold_time) {
+    set_state(3);
+  }
 }
 
 void spin_ramp_down() {
-
+  long delta = millis() - state_start_time;
+  double sp = 0;
+  if (delta < ramp_time) {
+    sp = map(delta, 0, hold_time, rpm_goal, 0);
+    if (sp < 0) {
+      sp = 0;
+    }
+  } else {
+    set_state(0);
+  }
+  throttle = compute_throttle(sp);
 }
 
 void run_calibration() {
   //calibration
-  if (calib_step < NUM_THROTTLE) {
-    long t = THROTTLE_MIN;
-    t += (long)(calib_step * ((THROTTLE_MAX - THROTTLE_MIN) / (NUM_THROTTLE - 1)));
-    int next_step = (int)floor((millis() - state_start_time) / CALIB_TIME);
-    if (next_step > calib_step) {
-      update_lut(calib_step, get_rpm(), t);
-      calib_step = next_step;
-    }
-    update_esc(t);
-  } else {
-    state = 0;
+  long delta = millis() - state_start_time;
+  if (delta > CALIB_TIME) {
+    update_lut(calib_step, get_rpm(), throttle);
+    calib_step++;
     state_start_time = millis();
+  }
+
+  if (calib_step < NUM_THROTTLE) {
+    throttle = THROTTLE_MIN;
+    throttle += (long)(calib_step * ((THROTTLE_MAX - THROTTLE_MIN) / (NUM_THROTTLE - 1)));
+  } else {
+    throttle = THROTTLE_STOP;
     print_calibration_table();
+    set_state(0);
   }
 }
 
 // change set-point, compute PID and update the ESC
-void compute_and_update(double sp) {
+long compute_throttle(double sp) {
   set_setpoint(sp);
   set_input(get_rpm());
-  int o = round(compute_pid());
-  update_esc(o);
+  long t = round(compute_pid());
+  return t;
 }
 
 

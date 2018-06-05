@@ -9,10 +9,8 @@
 #define READOUT_PERIOD      50 // ms
 #define THROTTLE_STOP     1000 // throttle value for stopping the spinner
 #define THROTTLE_MIN      1080 //minimum throttle value where the spinner rotates
-#define THROTTLE_MAX      1300 // maximum throttle value
-#define RPM_MIN           1900 // minimum RPM 
-#define RPM_MAX          11640 // maximum RPM 
-#define NUM_THROTTLE        10 // number of throttle values in the LUT. More = more accurate feed-forward, but slower
+#define THROTTLE_MAX      1200 // maximum throttle value
+#define NUM_THROTTLE         8 // number of throttle values in the LUT. More = more accurate feed-forward, but slower
 #define D_SMOOTHING          8 // size of running average for the D term. This eliminates jitter
 #define CALIB_TIME       10000 // ms, time spent on each step when doing calibration. This should be long enough for the RPM to settle on a stable value
 #define STEADY_THRES         0.08 //8%. When the current RPM is within 8% of the setpoint, the state is switched from RAMP to  STEADY STATE
