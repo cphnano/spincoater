@@ -35,10 +35,6 @@ PrintWriter log_writer;
 void setup() {
   size(800, 600);
 
-  add_ramp(2.0, 3.0, 1500.0);
-  add_ramp(7.0, 5.0, 3000.0);
-  add_ramp(15.0, 2.0, 500.0);
-
   roboto = createFont("Roboto-Regular.ttf", 32);
   textFont(roboto);
 
@@ -52,6 +48,28 @@ void setup() {
     instr = port.readStringUntil(nl); // throw away the first reading to clear the buffer
     instr = null;
   }
+}
+
+boolean load_profile(String filename) {
+  BufferedReader reader = createReader(filename);
+  String line = null;
+  try {
+    while ((line = reader.readLine()) != null) {
+      String[] pieces = split(line, " ");
+      if (pieces.length == 3) {
+        float start = float(pieces[0]);
+        float ramp_time = float(pieces[1]);
+        float rpm = float(pieces[2]);
+        add_ramp(start, ramp_time, rpm);
+      }
+    }
+    reader.close();
+    return true;
+  } 
+  catch (IOException e) {
+    e.printStackTrace();
+  }
+  return false;
 }
 
 void init_gui() {
@@ -73,6 +91,11 @@ void init_gui() {
     .setColorBackground(color(65, 65, 65))
     .setColorActive(color(255, 0, 0))
     .setLabel("STOP");
+
+  cp5.addButton("button_load")
+    .setPosition(512, 32)
+    .setSize(64, 32)
+    .setLabel("LOAD PROFILE");
 }
 
 public void button_start() {
@@ -99,6 +122,18 @@ public void button_stop() {
   }
 }
 
+public void button_load() {
+  selectInput("Select spincoating profile:", "fileSelected");
+}
+
+void fileSelected(File selection) {
+  if (selection == null) {
+    println("No file selected");
+  } else {
+    load_profile(selection.getAbsolutePath());
+  }
+}
+
 void update() {
   if (spin_started) {
     float delta_time = (millis()-start_time)/1000.0;
@@ -111,7 +146,7 @@ void update() {
         write_cmd("RAMP "+str(ramp_times[process_step])+";"+str(ramp_rpm[process_step]));
         process_step++;
       }
-    } else if (process_step == ramp_start_times.length) {
+    } else if (process_step == ramp_start_times.length && ramp_start_times.length > 0) {
       if (ramp_start_times[process_step-1]+ramp_times[process_step-1] < delta_time) {
         write_cmd("RAMP 0.1;0.0"); // fast ramp down to zero
         process_step++;
