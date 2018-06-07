@@ -30,6 +30,8 @@ int process_step = 0;
 
 boolean spin_started = false;
 
+PrintWriter log_writer;
+
 void setup() {
   size(800, 600);
 
@@ -75,6 +77,10 @@ void init_gui() {
 
 public void button_start() {
   if (!spin_started) {
+    String timestamp = nf(year(), 4)+nf(month(), 2)+nf(day(), 2);
+    timestamp = timestamp+"_"+nf(hour(), 2)+nf(minute(), 2)+nf(second(), 2);
+    log_writer = createWriter("SPIN_"+timestamp+".txt");
+    log_writer.println("TIME RPM SETPOINT THROTTLE");
     process_step = 0;
     points_time = new float[0];
     points_rpm = new float[0];
@@ -86,6 +92,8 @@ public void button_start() {
 
 public void button_stop() {
   if (spin_started) {
+    log_writer.flush();
+    log_writer.close();
     write_cmd("STOP");
     spin_started = false;
   }
@@ -105,11 +113,7 @@ void update() {
       }
     } else if (process_step == ramp_start_times.length) {
       if (ramp_start_times[process_step-1]+ramp_times[process_step-1] < delta_time) {
-<<<<<<< HEAD
         write_cmd("RAMP 0.1;0.0"); // fast ramp down to zero
-=======
-        write_cmd("RAMP 0.1;0.0");
->>>>>>> 048105407b7d2948cdca3d280d90ba7a6c155470
         process_step++;
       }
     }
@@ -120,6 +124,7 @@ void update() {
         instr = port.readStringUntil(nl);
         if (instr != null) {
           instr = trim(instr);
+          log_writer.println(str(delta_time)+" "+instr);
           String[] parts = split(instr, " ");
           float t = delta_time;
           float rpm = float(parts[0]);
