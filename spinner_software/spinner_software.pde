@@ -105,7 +105,11 @@ void update() {
       }
     } else if (process_step == ramp_start_times.length) {
       if (ramp_start_times[process_step-1]+ramp_times[process_step-1] < delta_time) {
+<<<<<<< HEAD
         write_cmd("RAMP 0.1;0.0"); // fast ramp down to zero
+=======
+        write_cmd("RAMP 0.1;0.0");
+>>>>>>> 048105407b7d2948cdca3d280d90ba7a6c155470
         process_step++;
       }
     }

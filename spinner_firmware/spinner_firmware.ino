@@ -107,12 +107,12 @@ void spin_ramp_up() {
     set_state(2);
   }
 
-  double err = rpm_goal - get_rpm();
+  /*double err = rpm_goal - get_rpm();
   if (err < rpm_goal * STEADY_THRES) {
     //switch to steady state
     sp = rpm_goal;
     set_state(2);
-  }
+  }*/
 
   throttle = compute_throttle(sp);
 }
