@@ -37,7 +37,7 @@ void init_esc() {
 void arm_esc() {
   unsigned long esc_start_time = millis();
   while (millis() - esc_start_time < 1000) {
-    ESC.writeMicroseconds(1000);
+    ESC.writeMicroseconds(THROTTLE_ARM);
     delay(20);
   }
 }

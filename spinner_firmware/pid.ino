@@ -4,6 +4,7 @@
 unsigned long last_pid_update;
 unsigned long ts;
 double Kp, Ki, Kd;
+double feedforward_gain;
 double input, output, setpoint;
 double lastErr, lastInput;
 double ITerm;
@@ -15,7 +16,10 @@ double current_smooth_input;
 double previous_smooth_input;
 unsigned int ind_smooth;
 
-double feedforward_gain;
+double kp_ramp, ki_ramp, kd_ramp, kf_ramp;
+double kp_hold, ki_hold, kd_hold, kf_hold;
+
+int profile; //0 = ramp, 1 = hold
 
 void init_pid() {
   for (int i = 0; i < D_SMOOTHING; i++) {
@@ -27,14 +31,25 @@ void init_pid() {
   ind_smooth = 0;
 
   last_pid_update = micros();
-  ts = 5000; //5ms
-  Kp = Ki = Kd = 0;
+  ts = SAMPLE_TIME; //5ms
   input = output = setpoint = 0;
   lastErr = 0;
   lastInput = 0;
   ITerm = 0;
   enable_feedforward = true;
-  feedforward_gain = FEEDFORWARD_GAIN;
+  profile = 0;
+
+  kp_ramp = DEFAULT_RAMP_KP;
+  ki_ramp = DEFAULT_RAMP_KI;
+  kd_ramp = DEFAULT_RAMP_KD;
+  kf_ramp = DEFAULT_RAMP_KF;
+
+  kp_hold = DEFAULT_HOLD_KP;
+  ki_hold = DEFAULT_HOLD_KI;
+  kd_hold = DEFAULT_HOLD_KD;
+  kf_hold = DEFAULT_HOLD_KF;
+
+  switch_profile_ramp();
 }
 
 double compute_pid() {
@@ -47,21 +62,21 @@ double compute_pid() {
 
     output = Kp * error;
     if (enable_feedforward) {
-      output += get_feedforward(setpoint*feedforward_gain);
+      output += get_feedforward(setpoint * feedforward_gain);
     }
 
     update_d_input(input);
     double dInput = (current_smooth_input - previous_smooth_input);
     output += Kd * dInput;
 
-    if(setpoint == 0){
+    if (setpoint == 0) {
       ITerm = 0;
     } else {
       double IMax = THROTTLE_MAX - output;
       double IMin = THROTTLE_MIN - output;
-      if(ITerm > IMax){
+      if (ITerm > IMax) {
         ITerm = IMax;
-      } else if(ITerm < IMin){
+      } else if (ITerm < IMin) {
         ITerm = IMin;
       }
     }
@@ -103,16 +118,32 @@ double get_output() {
   return output;
 }
 
-void set_pid_parameters(double p, double i, double d) {
+void set_pid_parameters(double p, double i, double d, double f) {
   double sample_time = ts / 1000000.0; // convert from µs to s
   Kp = p;
   Ki = i * sample_time;
   Kd = d / sample_time;
+  feedforward_gain = f;
 }
 
 void set_sample_time(unsigned long t) {
+  double sample_time = ts / 1000000.0; // convert from µs to s
   ts = t;
-  set_pid_parameters(Kp, Ki, Kd);
+  set_pid_parameters(Kp, Ki / sample_time, Kd * sample_time, feedforward_gain);
+}
+
+void switch_profile_ramp() {
+  if (profile != 0) {
+    profile = 0;
+    set_pid_parameters(kp_ramp, ki_ramp, kd_ramp, kf_ramp);
+  }
+}
+
+void switch_profile_hold() {
+  if (profile != 1) {
+    profile = 1;
+    set_pid_parameters(kp_hold, ki_hold, kd_hold, kf_hold);
+  }
 }
 
 void update_d_input(double inp) {
@@ -161,17 +192,21 @@ double get_feedforward(double r) {
 void print_parameters() {
   Serial.println("Ramp: ");
   Serial.print("Kp: ");
-  Serial.print(Kp_RAMP, 8);
+  Serial.print(kp_ramp, 8);
   Serial.print(", Ki: ");
-  Serial.print(Ki_RAMP, 8);
+  Serial.print(ki_ramp, 8);
   Serial.print(", Kd: ");
-  Serial.println(Kd_RAMP, 8);
+  Serial.print(kd_ramp, 8);
+  Serial.print(", Feedforward: ");
+  Serial.println(kf_ramp);
   Serial.println("");
   Serial.println("Steady state: ");
   Serial.print("Kp: ");
-  Serial.print(Kp_SS, 8);
+  Serial.print(kp_hold, 8);
   Serial.print(", Ki: ");
-  Serial.print(Ki_SS, 8);
+  Serial.print(ki_hold, 8);
   Serial.print(", Kd: ");
-  Serial.println(Kd_SS, 8);
+  Serial.print(kd_hold, 8);
+  Serial.print(", Feedforward: ");
+  Serial.println(kf_hold);
 }

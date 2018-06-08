@@ -4,22 +4,22 @@ void interpret_command(String inputstr) {
   String cmd = "";
   String param = "";
   int ind = inputstr.indexOf(' ');
-  if(ind != -1){
+  if (ind != -1) {
     cmd = inputstr.substring(0, ind);
-    param = inputstr.substring(ind+1);
+    param = inputstr.substring(ind + 1);
   } else {
     cmd = inputstr;
   }
-  
+
   if (cmd == "RAMP") { //Example: RAMP <ramp up time>;<desired RPM>
     int semicolon_ind = param.indexOf(';');
-    if (semicolon_ind != -1){
+    if (semicolon_ind != -1) {
       String time_str = param.substring(0, semicolon_ind);
-      String rpm_str = param.substring(semicolon_ind+1);
+      String rpm_str = param.substring(semicolon_ind + 1);
       boolean is_float = true;
       is_float = (is_float && string_is_float(time_str));
       is_float = (is_float && string_is_float(rpm_str));
-      if(is_float){
+      if (is_float) {
         set_ramp_time(time_str.toFloat());
         set_rpm_goal(rpm_str.toFloat());
         start_ramp();
@@ -27,6 +27,18 @@ void interpret_command(String inputstr) {
     }
   } else if (cmd == "STOP") {
     set_state(0);
+  } else if (cmd == "START_CALIBRATION") {
+    set_state(-1);
+  } else if (cmd == "GET_CALIBRATION") {
+    print_calibration_table();
+  } else if (cmd == "RESET_EEPROM") {
+    // TODO
+  } else  if (cmd == "SET_PID_HOLD") {
+    // TODO
+  } else if (cmd == "SET_PID_RAMP") {
+    // TODO
+  } else if (cmd == "GET_PID") {
+    print_parameters();
   }
 }
 

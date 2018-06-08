@@ -10,11 +10,13 @@
 #define THROTTLE_STOP      1000 // throttle value for stopping the spinner
 #define THROTTLE_MIN       1080 //minimum throttle value where the spinner rotates
 #define THROTTLE_MAX       1200 // maximum throttle value
+#define THROTTLE_ARM       1000 // throttle value used for arming the ESC
 #define NUM_THROTTLE          8 // number of throttle values in the LUT. More = more accurate feed-forward, but slower
 #define D_SMOOTHING           8 // size of running average for the D term. This eliminates jitter
 #define CALIB_TIME        10000 // ms, time spent on each step when doing calibration. This should be long enough for the RPM to settle on a stable value
 #define STEADY_THRES          0.08 //8%. When the current RPM is within 8% of the setpoint, the state is switched from RAMP to  STEADY STATE
 #define FEEDFORWARD_GAIN      1.0 // gain for the feed-forward term. This can be tuned to use less feed-forward and more PID.
+#define SAMPLE_TIME       1000 // µs, sample time for control loop
 
 #define DEFAULT_RAMP_TIME  5000
 #define DEFAULT_HOLD_TIME 10000
@@ -22,12 +24,12 @@
 
 /***PID parameters***/
 //Steady  state
-#define Kp_SS 51.27 * 0.001
-#define Ki_SS 35.89 * 0.001
-#define Kd_SS 0.0
+#define DEFAULT_HOLD_KP 51.27 * 0.001
+#define DEFAULT_HOLD_KI 35.89 * 0.001
+#define DEFAULT_HOLD_KD 0.0
+#define DEFAULT_HOLD_KF 1.0
 //Ramp
-#define Kp_RAMP 85.0 * 0.001
-#define Ki_RAMP 0.0
-#define Kd_RAMP 0.0
-
-
+#define DEFAULT_RAMP_KP 85.0 * 0.001
+#define DEFAULT_RAMP_KI 0.0
+#define DEFAULT_RAMP_KD 0.0
+#define DEFAULT_RAMP_KF 1.0

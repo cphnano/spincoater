@@ -26,8 +26,7 @@ void setup() {
 
   init_pid();
   init_tacho();
-  set_sample_time(1000);
-  set_pid_parameters(Kp_RAMP, Ki_RAMP, Kd_RAMP);
+  set_sample_time(SAMPLE_TIME);
 
   arm_esc();
   delay(1000);
@@ -84,9 +83,9 @@ void set_state(int new_state) {
     if (state == -1) {
       calib_step = 0;
     } else if (state == 1) {
-      set_pid_parameters(Kp_RAMP, Ki_RAMP, Kd_RAMP);
+      switch_profile_ramp();
     } else if (state == 2) {
-      set_pid_parameters(Kp_SS, Ki_SS, Kd_SS);
+      switch_profile_hold();
     }
     state_start_time = millis();
   }
@@ -108,11 +107,11 @@ void spin_ramp_up() {
   }
 
   /*double err = rpm_goal - get_rpm();
-  if (err < rpm_goal * STEADY_THRES) {
+    if (err < rpm_goal * STEADY_THRES) {
     //switch to steady state
     sp = rpm_goal;
     set_state(2);
-  }*/
+    }*/
 
   throttle = compute_throttle(sp);
 }
@@ -131,7 +130,6 @@ void run_calibration() {
     throttle += (long)(calib_step * ((THROTTLE_MAX - THROTTLE_MIN) / (NUM_THROTTLE - 1)));
   } else {
     throttle = THROTTLE_STOP;
-    print_calibration_table();
     set_state(0);
   }
 }
