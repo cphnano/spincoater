@@ -64,6 +64,11 @@ boolean load_profile(String filename) {
       }
     }
     reader.close();
+    if (ramp_start_times.length > 0) {
+      float end_time = ramp_start_times[ramp_start_times.length-1];
+      end_time += ramp_times[ramp_start_times.length-1];
+      process_time = end_time + 5.0;
+    }
     return true;
   } 
   catch (IOException e) {
@@ -93,9 +98,14 @@ void init_gui() {
     .setLabel("STOP");
 
   cp5.addButton("button_load")
-    .setPosition(512, 32)
+    .setPosition(636, 32)
     .setSize(64, 32)
     .setLabel("LOAD PROFILE");
+
+  cp5.addButton("button_calibrate")
+    .setPosition(606, 536)
+    .setSize(96, 32)
+    .setLabel("START CALIBRATION");
 }
 
 public void button_start() {
@@ -124,6 +134,10 @@ public void button_stop() {
 
 public void button_load() {
   selectInput("Select spincoating profile:", "fileSelected");
+}
+
+public void button_calibrate() {
+  write_cmd("START_CALIBRATION");
 }
 
 void fileSelected(File selection) {
