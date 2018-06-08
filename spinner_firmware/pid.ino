@@ -19,8 +19,6 @@ unsigned int ind_smooth;
 double kp_ramp, ki_ramp, kd_ramp, kf_ramp;
 double kp_hold, ki_hold, kd_hold, kf_hold;
 
-int profile; //0 = ramp, 1 = hold
-
 void init_pid() {
   for (int i = 0; i < D_SMOOTHING; i++) {
     smoothed_input[i] = 0;
@@ -37,7 +35,6 @@ void init_pid() {
   lastInput = 0;
   ITerm = 0;
   enable_feedforward = true;
-  profile = 0;
 
   kp_ramp = DEFAULT_RAMP_KP;
   ki_ramp = DEFAULT_RAMP_KI;
@@ -133,17 +130,11 @@ void set_sample_time(unsigned long t) {
 }
 
 void switch_profile_ramp() {
-  if (profile != 0) {
-    profile = 0;
-    set_pid_parameters(kp_ramp, ki_ramp, kd_ramp, kf_ramp);
-  }
+  set_pid_parameters(kp_ramp, ki_ramp, kd_ramp, kf_ramp);
 }
 
 void switch_profile_hold() {
-  if (profile != 1) {
-    profile = 1;
-    set_pid_parameters(kp_hold, ki_hold, kd_hold, kf_hold);
-  }
+  set_pid_parameters(kp_hold, ki_hold, kd_hold, kf_hold);
 }
 
 void update_d_input(double inp) {

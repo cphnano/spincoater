@@ -26,7 +26,6 @@ void setup() {
 
   init_pid();
   init_tacho();
-  set_sample_time(SAMPLE_TIME);
 
   arm_esc();
   delay(1000);
@@ -82,6 +81,8 @@ void set_state(int new_state) {
 
     if (state == -1) {
       calib_step = 0;
+    } else if (state == 0){
+      init_pid(); // reset integrators
     } else if (state == 1) {
       switch_profile_ramp();
     } else if (state == 2) {
