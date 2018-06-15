@@ -12,6 +12,8 @@ Serial port;
 
 boolean connected = false;
 
+boolean profile_loaded = false;
+
 ControlP5 cp5;
 
 PFont roboto;
@@ -64,11 +66,23 @@ boolean load_profile(String filename) {
       }
     }
     reader.close();
+
+    // set process time so logging and plotting matches the spin time
     if (ramp_start_times.length > 0) {
       float end_time = ramp_start_times[ramp_start_times.length-1];
       end_time += ramp_times[ramp_start_times.length-1];
       process_time = end_time + 5.0;
     }
+
+    // set max rpm so the axes fit the data
+    max_rpm = 0;
+    for (int i = 0; i < ramp_rpm.length; i++) {
+      if (ramp_rpm[i] > max_rpm) {
+        max_rpm = ramp_rpm[i];
+      }
+    }
+    max_rpm = ceil((max_rpm*1.25)/100)*100;
+    profile_loaded = true;
     return true;
   } 
   catch (IOException e) {
@@ -80,6 +94,7 @@ boolean load_profile(String filename) {
 void init_gui() {
   cp5 = new ControlP5(this);
   cp5.setAutoDraw(false);
+
 
   cp5.addButton("button_start")
     .setPosition(32, 32)
@@ -190,57 +205,59 @@ void render() {
   cp5.draw();
 
   // draw plot
-  noStroke();
-  fill(255);
-  rect(100, 200, 600, 300);
-  stroke(0);
-  line(100, 500, 700, 500);
-  line(100, 500, 100, 200);
-  fill(0);
-  textSize(12);
-  textAlign(CENTER, TOP);
-  text("0", 100, 508);
-  text(str(process_time), 700, 508);
-  text("Time [s]", 400, 508);
-  textAlign(RIGHT, CENTER);
-  text("0", 92, 500);
-  text(str(max_rpm), 92, 200);
-  text("Speed [RPM]", 92, 350);
+  if (profile_loaded) {
+    noStroke();
+    fill(255);
+    rect(100, 200, 600, 300);
+    stroke(0);
+    line(100, 500, 700, 500);
+    line(100, 500, 100, 200);
+    fill(0);
+    textSize(12);
+    textAlign(CENTER, TOP);
+    text("0", 100, 508);
+    text(str(process_time), 700, 508);
+    text("Time [s]", 400, 508);
+    textAlign(RIGHT, CENTER);
+    text("0", 92, 500);
+    text(str(max_rpm), 92, 200);
+    text("Speed [RPM]", 92, 350);
 
-  // plot desired speed profile
-  float t1 = 0.0;
-  float r1 = 0.0;
-  stroke(130, 184, 58);
-  for (int i = 0; i < ramp_start_times.length; i++) {
-    float x1 = map(t1, 0.0, process_time, 100.0, 700.0);
-    float x2 = map(ramp_start_times[i], 0.0, process_time, 100.0, 700.0);
-    float x3 = map(ramp_start_times[i]+ramp_times[i], 0.0, process_time, 100.0, 700.0);
-    float y1 = map(r1, 0.0, max_rpm, 500.0, 200.0);
-    float y3 = map(ramp_rpm[i], 0.0, max_rpm, 500.0, 200.0);
-    line(x1, y1, x2, y1);
-    line(x2, y1, x3, y3);
-    t1 = ramp_start_times[i]+ramp_times[i];
-    r1 = ramp_rpm[i];
+    // plot desired speed profile
+    float t1 = 0.0;
+    float r1 = 0.0;
+    stroke(130, 184, 58);
+    for (int i = 0; i < ramp_start_times.length; i++) {
+      float x1 = map(t1, 0.0, process_time, 100.0, 700.0);
+      float x2 = map(ramp_start_times[i], 0.0, process_time, 100.0, 700.0);
+      float x3 = map(ramp_start_times[i]+ramp_times[i], 0.0, process_time, 100.0, 700.0);
+      float y1 = map(r1, 0.0, max_rpm, 500.0, 200.0);
+      float y3 = map(ramp_rpm[i], 0.0, max_rpm, 500.0, 200.0);
+      line(x1, y1, x2, y1);
+      line(x2, y1, x3, y3);
+      t1 = ramp_start_times[i]+ramp_times[i];
+      r1 = ramp_rpm[i];
 
-    if (i == ramp_start_times.length-1) {
-      line(x3, y3, x3, 500.0);
+      if (i == ramp_start_times.length-1) {
+        line(x3, y3, x3, 500.0);
+      }
     }
-  }
 
-  // plot real-time speed
-  stroke(81, 77, 148);
-  for (int i = 1; i < points_time.length; i++) {
-    float x1 = map(points_time[i-1], 0.0, process_time, 100.0, 700.0);
-    float x2 = map(points_time[i], 0.0, process_time, 100.0, 700.0);
-    float y1 = map(points_rpm[i-1], 0.0, max_rpm, 500.0, 200.0);
-    float y2 = map(points_rpm[i], 0.0, max_rpm, 500.0, 200.0);
-    line(x1, y1, x2, y2);
-  }
+    // plot real-time speed
+    stroke(81, 77, 148);
+    for (int i = 1; i < points_time.length; i++) {
+      float x1 = map(points_time[i-1], 0.0, process_time, 100.0, 700.0);
+      float x2 = map(points_time[i], 0.0, process_time, 100.0, 700.0);
+      float y1 = map(points_rpm[i-1], 0.0, max_rpm, 500.0, 200.0);
+      float y2 = map(points_rpm[i], 0.0, max_rpm, 500.0, 200.0);
+      line(x1, y1, x2, y2);
+    }
 
-  if (spin_started) {
-    stroke(65);
-    float x = map(millis()-start_time, 0.0, process_time*1000, 100.0, 700.0);
-    line(x, 200, x, 500);
+    if (spin_started) {
+      stroke(65);
+      float x = map(millis()-start_time, 0.0, process_time*1000, 100.0, 700.0);
+      line(x, 200, x, 500);
+    }
   }
 }
 
