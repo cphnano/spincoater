@@ -34,6 +34,8 @@ boolean spin_started = false;
 
 PrintWriter log_writer;
 
+String profile_filename = "";
+
 void setup() {
   size(800, 600);
 
@@ -53,6 +55,12 @@ void setup() {
 }
 
 boolean load_profile(String filename) {
+  profile_filename = filename;
+  // reset profile
+  ramp_start_times = new float[0];
+  ramp_times = new float[0];
+  ramp_rpm = new float[0];
+
   BufferedReader reader = createReader(filename);
   String line = null;
   try {
@@ -124,10 +132,12 @@ void init_gui() {
 }
 
 public void button_start() {
-  if (!spin_started) {
+  if (!spin_started && profile_loaded) {
     String timestamp = nf(year(), 4)+nf(month(), 2)+nf(day(), 2);
     timestamp = timestamp+"_"+nf(hour(), 2)+nf(minute(), 2)+nf(second(), 2);
-    log_writer = createWriter("SPIN_"+timestamp+".txt");
+    String filename = "./logs/SPIN_"+timestamp+".txt";
+    log_writer = createWriter(filename);
+    log_writer.println("Spin profile: "+profile_filename);
     log_writer.println("TIME RPM SETPOINT THROTTLE");
     process_step = 0;
     points_time = new float[0];
@@ -159,6 +169,7 @@ void fileSelected(File selection) {
   if (selection == null) {
     println("No file selected");
   } else {
+    println("Loading "+selection.getAbsolutePath());
     load_profile(selection.getAbsolutePath());
   }
 }
