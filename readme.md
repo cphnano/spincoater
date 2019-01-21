@@ -31,14 +31,3 @@ It uses a simple serial communication protocol in plain ASCII text at a baudrate
 | Sets control parameters for ramp | SET_PID_RAMP \<P>;\<I>;\<D>;\<F> | SET_PID_RAMP 85.0;0.0;0.0;1.0 |
 | Sets control parameters for hold | SET_PID_HOLD \<P>;\<I>;\<D>;\<F> | SET_PID_HOLD 85.0;0.0;0.0;1.0 |
 | Resets the settings saved in EEPROM to default values (PID and feedforward profiles). Use GET_PID to get the new values. Spinner must be calibrated after an EEPROM reset! | RESET_EEPROM | RESET_EEPROM |
-
-
-FAQ
------
- - Q: How do I use the spinner software?
- 
-   A: Download [processing](https://processing.org/) and then open spinner_software/spinner_software.pde
-
- - Q: The spinner software won't connect! What am I doing wrong? 
- 
-   A: Make sure that you are connected to the right COM port and using the correct baudrate. This can be set on lines 8 and 9 in spinner_software.pde. Ensure that the arduino is connected and is running the correct firmware.
