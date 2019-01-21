@@ -1,5 +1,8 @@
 Spin coater
 ====
+
+![Spin coater 2](spinner_hardware/renders/SOLW_20180625_spinner_assembly_render_cropped.png)
+
 Repository for cphnano's DIY spin coater, for spin coating substrates up to 6".
 This repository consists of 3 parts: 
  - spinner_firmware/
