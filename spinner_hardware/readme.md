@@ -54,6 +54,6 @@ Instructions:
  - Connect motor to ESC.
  - Connect ESC to PSU.
  - Connect ESC and tachometer to arduino. 
- - Flash firmware onto arduino (see 'spinner_firmware' folder).
+ - Flash firmware onto arduino (download the firmware from the 'spinner_firmware' folder and upload it to the board like any other arduino program).
  - You are now ready to start spin coating. See 'spinner_software' folder for further instructions.
 
