@@ -88,7 +88,7 @@ double compute_pid() {
         output = THROTTLE_MIN;
       }
     } else {
-      output = THROTTLE_STOP;
+      output = THROTTLE_NEUTRAL;
     }
 
     lastErr = error;
@@ -151,7 +151,7 @@ void update_d_input(double inp) {
 
 double get_feedforward(double r) {
   if (r == 0) {
-    return (double)THROTTLE_STOP;
+    return (double)THROTTLE_NEUTRAL;
   }
 
   if (r <= throttletable[0][0]) {

@@ -25,21 +25,31 @@ int throttletable[NUM_THROTTLE][2] = { //{RPM, throttle [ms]}
 void init_esc() {
   total_output = 0;
   for (int i = 0; i < OUTPUT_SAMPLES; i++) {
-    output_values[i] = THROTTLE_STOP;
-    total_output += THROTTLE_STOP;
+    output_values[i] = THROTTLE_NEUTRAL;
+    total_output += THROTTLE_NEUTRAL;
   }
   last_esc_update = 0;
-  throttle_out = THROTTLE_STOP;
+  throttle_out = THROTTLE_NEUTRAL;
   ind_output = 0;
   ESC.attach(ESC_PIN);
 }
 
-void arm_esc() {
+void setup_esc() {
+  send_signal(5000, THROTTLE_NEUTRAL);
+  send_signal(2000, THROTTLE_MAX);
+  send_signal(2000, THROTTLE_MIN);
+}
+
+void emulate_transmitter(unsigned long pulse_length, unsigned long throttle) {
   unsigned long esc_start_time = millis();
-  while (millis() - esc_start_time < 1000) {
-    ESC.writeMicroseconds(THROTTLE_ARM);
+  while (millis() - esc_start_time < pulse_length) {
+    ESC.writeMicroseconds(throttle);
     delay(20);
   }
+}
+
+void arm_esc() {
+  emulate_transmitte(2000, THROTTLE_NEUTRAL);
 }
 
 void update_esc(int p) {

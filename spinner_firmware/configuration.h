@@ -7,10 +7,10 @@
 #define OUTPUT_SAMPLES        1 // size of the running average for the output throttle
 
 #define READOUT_PERIOD       50 // ms
-#define THROTTLE_STOP      1000 // throttle value for stopping the spinner
-#define THROTTLE_MIN       1080 //minimum throttle value where the spinner rotates
-#define THROTTLE_MAX       1200 // maximum throttle value
-#define THROTTLE_ARM       1000 // throttle value used for arming the ESC
+#define THROTTLE_NEUTRAL   1500 // throttle value for stopping the spinner
+#define THROTTLE_MIN       1530 // minimum throttle value where the spinner rotates
+#define THROTTLE_MAX       2000 // maximum throttle value
+#define THROTTLE_REVERSE   1000 // maximum reverse/brake
 #define NUM_THROTTLE          8 // number of throttle values in the LUT. More = more accurate feed-forward, but slower
 #define D_SMOOTHING           8 // size of running average for the D term. This eliminates jitter
 #define CALIB_TIME        10000 // ms, time spent on each step when doing calibration. This should be long enough for the RPM to settle on a stable value
